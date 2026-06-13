@@ -3,11 +3,23 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
+// Support optional env overrides (prefix with VITE_ for Vite clients)
+const metaEnv = (import.meta as any).env || {};
+const finalConfig = {
+  projectId: metaEnv.VITE_FIREBASE_PROJECT_ID || firebaseConfig.projectId,
+  appId: metaEnv.VITE_FIREBASE_APP_ID || firebaseConfig.appId,
+  apiKey: metaEnv.VITE_FIREBASE_API_KEY || firebaseConfig.apiKey,
+  authDomain: metaEnv.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfig.authDomain,
+  firestoreDatabaseId: metaEnv.VITE_FIREBASE_FIRESTORE_DATABASE_ID || firebaseConfig.firestoreDatabaseId,
+  storageBucket: metaEnv.VITE_FIREBASE_STORAGE_BUCKET || firebaseConfig.storageBucket,
+  messagingSenderId: metaEnv.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseConfig.messagingSenderId,
+};
+
 // Initialize Firebase App
-const app = initializeApp(firebaseConfig);
+const app = initializeApp(finalConfig);
 
 // Export Firestore database with explicit DB ID (CRITICAL: App will break without this line)
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const db = getFirestore(app, finalConfig.firestoreDatabaseId);
 
 // Export Auth
 export const auth = getAuth();
