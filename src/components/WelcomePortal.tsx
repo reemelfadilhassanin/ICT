@@ -220,10 +220,6 @@ export default function WelcomePortal({ students, onRegisterStudent, onLoginStud
                   required
                   autoFocus
                 />
-                
-                <p className="text-[10px] text-slate-400 mt-2.5 text-center leading-relaxed">
-                  * الرمز الافتراضي للتجربة هو <strong className="font-mono text-slate-600">ict2026</strong> (يمكنك تغييره من الداخل لاحقاً).
-                </p>
 
                 {error && (
                   <p className="text-red-500 text-xs mt-2 text-right font-bold">
