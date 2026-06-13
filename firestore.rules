@@ -1,0 +1,82 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default Deny Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // Global safety & validation helpers
+    function isValidId(id) {
+      return id is string && id.size() < 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    
+    function isValidStudent(data) {
+      return data.keys().hasAll(['id', 'name', 'gradeLevel', 'registeredAt'])
+        && data.keys().size() == 4
+        && data.id is string && data.id.size() < 128
+        && data.name is string && data.name.size() > 0 && data.name.size() < 200
+        && (data.gradeLevel == '1st' || data.gradeLevel == '2nd')
+        && data.registeredAt is string && data.registeredAt.size() < 40;
+    }
+    
+    function isValidDocument(data) {
+      return data.keys().hasAll(['id', 'title', 'description', 'gradeLevel', 'type', 'unit', 'content', 'createdAt'])
+        && data.id is string && data.id.size() < 128
+        && data.title is string && data.title.size() > 0 && data.title.size() < 500
+        && data.description is string && data.description.size() < 5000
+        && (data.gradeLevel == '1st' || data.gradeLevel == '2nd')
+        && (data.type == 'summary' || data.type == 'assignment')
+        && data.unit is string && data.unit.size() < 500
+        && data.content is list && data.content.size() < 150
+        && data.createdAt is string && data.createdAt.size() < 40;
+    }
+    
+    function isValidSubmission(data) {
+      return data.keys().hasAll(['id', 'assignmentId', 'assignmentTitle', 'studentName', 'gradeLevel', 'submittedAt', 'answerText'])
+        && data.id is string && data.id.size() < 128
+        && data.assignmentId is string && data.assignmentId.size() < 128
+        && data.assignmentTitle is string && data.assignmentTitle.size() > 0 && data.assignmentTitle.size() < 500
+        && data.studentName is string && data.studentName.size() > 0 && data.studentName.size() < 200
+        && (data.gradeLevel == '1st' || data.gradeLevel == '2nd')
+        && data.submittedAt is string && data.submittedAt.size() < 40
+        && data.answerText is string && data.answerText.size() < 30000;
+    }
+
+    // Students database access
+    match /students/{studentId} {
+      allow read: if true;
+      allow create, update: if isValidId(studentId) && isValidStudent(request.resource.data);
+      allow delete: if true;
+    }
+    
+    // Educational Documents & assignments
+    match /documents/{documentId} {
+      allow read: if true;
+      allow create, update: if isValidId(documentId) && isValidDocument(request.resource.data);
+      allow delete: if true;
+    }
+    
+    // Homework Submissions
+    match /submissions/{submissionId} {
+      allow read: if true;
+      allow create: if isValidId(submissionId) && isValidSubmission(request.resource.data);
+      allow update: if isValidId(submissionId) && (
+        isValidSubmission(request.resource.data) || 
+        (
+          request.resource.data.keys().hasAll(['id', 'assignmentId', 'assignmentTitle', 'studentName', 'gradeLevel', 'submittedAt', 'answerText', 'grade', 'feedback']) &&
+          request.resource.data.id == resource.data.id &&
+          request.resource.data.assignmentId == resource.data.assignmentId &&
+          request.resource.data.studentName == resource.data.studentName &&
+          request.resource.data.gradeLevel == resource.data.gradeLevel &&
+          request.resource.data.submittedAt == resource.data.submittedAt &&
+          request.resource.data.answerText == resource.data.answerText &&
+          (request.resource.data.grade is string || !request.resource.data.keys().contains('grade')) &&
+          (request.resource.data.feedback is string || !request.resource.data.keys().contains('feedback'))
+        )
+      );
+      allow delete: if true;
+    }
+  }
+}

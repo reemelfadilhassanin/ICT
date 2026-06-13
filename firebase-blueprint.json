@@ -1,0 +1,146 @@
+{
+  "entities": {
+    "student": {
+      "title": "Student",
+      "description": "Registered Student account profile info",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique student identifier"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the student"
+        },
+        "gradeLevel": {
+          "type": "string",
+          "enum": ["1st", "2nd"],
+          "description": "The grade level (1st or 2nd secondary)"
+        },
+        "registeredAt": {
+          "type": "string",
+          "description": "Registration date in DD-MM-YYYY format"
+        }
+      },
+      "required": ["id", "name", "gradeLevel", "registeredAt"]
+    },
+    "document": {
+      "title": "DocumentItem",
+      "description": "Summary or Assignment educational item",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique document identifier"
+        },
+        "title": {
+          "type": "string",
+          "description": "The custom title of the lesson or task"
+        },
+        "description": {
+          "type": "string",
+          "description": "Brief introductory description"
+        },
+        "gradeLevel": {
+          "type": "string",
+          "enum": ["1st", "2nd"],
+          "description": "The target secondary student class"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["summary", "assignment"],
+          "description": "Whether this is a summary or homework assignment"
+        },
+        "unit": {
+          "type": "string",
+          "description": "The unit name or category title"
+        },
+        "content": {
+          "type": "array",
+          "description": "The detailed interactive list of items"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp or date in YYYY-MM-DD"
+        },
+        "fileSize": {
+          "type": "string",
+          "description": "Optional file size layout information"
+        },
+        "isCustom": {
+          "type": "boolean",
+          "description": "Whether this was teacher added post-launch"
+        },
+        "pdfFileUrl": {
+          "type": "string",
+          "description": "Optional Base64 PDF dataURL"
+        },
+        "pdfFileName": {
+          "type": "string",
+          "description": "Optional PDF upload name"
+        }
+      },
+      "required": ["id", "title", "description", "gradeLevel", "type", "unit", "content", "createdAt"]
+    },
+    "submission": {
+      "title": "Submission",
+      "description": "Homework solutions submitted by students and evaluated by teacher",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique homework submission ID"
+        },
+        "assignmentId": {
+          "type": "string",
+          "description": "Referenced assignment ID"
+        },
+        "assignmentTitle": {
+          "type": "string",
+          "description": "Title of the answered task at submission time"
+        },
+        "studentName": {
+          "type": "string",
+          "description": "Full name of the submitting student"
+        },
+        "gradeLevel": {
+          "type": "string",
+          "enum": ["1st", "2nd"],
+          "description": "Grade level of the assignment when solved"
+        },
+        "submittedAt": {
+          "type": "string",
+          "description": "Date solved and sent in YYYY-MM-DD"
+        },
+        "answerText": {
+          "type": "string",
+          "description": "Content of the solution input as text"
+        },
+        "grade": {
+          "type": "string",
+          "description": "The evaluator score e.g. 10/10"
+        },
+        "feedback": {
+          "type": "string",
+          "description": "Teacher custom constructive review feedback"
+        }
+      },
+      "required": ["id", "assignmentId", "assignmentTitle", "studentName", "gradeLevel", "submittedAt", "answerText"]
+    }
+  },
+  "firestore": {
+    "/students/{studentId}": {
+      "schema": "student",
+      "description": "Collection of all student accounts"
+    },
+    "/documents/{documentId}": {
+      "schema": "document",
+      "description": "Collection of all study materials and interactive assignments"
+    },
+    "/submissions/{submissionId}": {
+      "schema": "submission",
+      "description": "Collection of all submitted test answers with grading stats"
+    }
+  }
+}

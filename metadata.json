@@ -1,0 +1,6 @@
+{
+  "name": "منصة تكنولوجيا المعلومات والاتصالات",
+  "description": "منصة تعليمية مخصصة لمادة تكنولوجيا المعلومات والاتصالات لطلاب الصفين الأول والثاني الثانوي، لعرض الملخصات والواجبات وإدارتها.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
