@@ -11,7 +11,7 @@ interface TeacherDashboardProps {
   documents: DocumentItem[];
   submissions: Submission[];
   students: Student[];
-  onAddDocument: (doc: DocumentItem) => void;
+  onAddDocument: (doc: DocumentItem) => Promise<void>;
   onDeleteDocument: (id: string) => void;
   onGradeSubmission: (id: string, grade: string, feedback: string) => void;
   onDeleteSubmission: (id: string) => void;
@@ -44,6 +44,7 @@ export default function TeacherDashboard({
   const [pdfFileUrl, setPdfFileUrl] = useState('');
   const [pdfFileName, setPdfFileName] = useState('');
   const [createSuccess, setCreateSuccess] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [uploadError, setUploadError] = useState('');
 
   // Grading states
@@ -80,8 +81,9 @@ export default function TeacherDashboard({
     });
   };
 
-  const handleCreateDocument = (e: React.FormEvent) => {
+  const handleCreateDocument = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
     if (!docTitle.trim() || !docDescription.trim() || !docUnit.trim()) return;
 
     let contentArray: string[] = [];
@@ -118,20 +120,46 @@ export default function TeacherDashboard({
       pdfFileName: creationMode === 'upload_pdf' ? pdfFileName : undefined
     };
 
-    onAddDocument(newDoc);
-    setCreateSuccess(true);
-    
-    // Reset form
-    setDocTitle('');
-    setDocDescription('');
-    setDocUnit('');
-    setDocContentLines('');
-    setPdfFileUrl('');
-    setPdfFileName('');
-    setCreationMode('compose');
+    setIsSaving(true);
     setUploadError('');
-
-    setTimeout(() => setCreateSuccess(false), 3000);
+    try {
+      await onAddDocument(newDoc);
+      setCreateSuccess(true);
+      
+      // Reset form ONLY on successful save
+      setDocTitle('');
+      setDocDescription('');
+      setDocUnit('');
+      setDocContentLines('');
+      setPdfFileUrl('');
+      setPdfFileName('');
+      setCreationMode('compose');
+      setUploadError('');
+      
+      setTimeout(() => setCreateSuccess(false), 3000);
+    } catch (err: any) {
+      console.error('Error adding document to Firestore:', err);
+      let userFriendlyMessage = 'حدث خطأ غير متوقع أثناء حفظ المستند في السحابة.';
+      if (err instanceof Error) {
+        try {
+          const parsed = JSON.parse(err.message);
+          if (parsed.error && parsed.error.includes("Missing or insufficient permissions")) {
+            userFriendlyMessage = 'فشل الحفظ: يرجى التحقق من إعدادات Firestore rules أو صلاحيات الكتابة.';
+          } else if (parsed.error) {
+            userFriendlyMessage = `خطأ في اتصال السيرفر: ${parsed.error}`;
+          }
+        } catch {
+          if (err.message.includes("quota") || err.message.includes("large") || err.message.includes("size")) {
+            userFriendlyMessage = 'عذراً، حجم ملف الـ PDF كبير جداً ومرفوض من سيرفر قاعدة البيانات. يرجى اختيار ملف PDF لا يتجاوز 500 كيلوبايت.';
+          } else {
+            userFriendlyMessage = `تعذر الحفظ: ${err.message}`;
+          }
+        }
+      }
+      setUploadError(userFriendlyMessage);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleGradeSubmit = (e: React.FormEvent) => {
@@ -469,6 +497,11 @@ export default function TeacherDashboard({
                               if (!file) return;
                               if (file.type !== 'application/pdf') {
                                 setUploadError('يرجى كأولوية اختيار مستند PDF فقط لضمان دقة الهوية التنسيقية.');
+                                return;
+                              }
+                              // Limit to 600 KB to fit within Firestore's 1MB limit comfortably with base64 overhead
+                              if (file.size > 600 * 1024) {
+                                setUploadError('حجم ملف الـ PDF المختار كبير جداً. تفادياً لمشاكل الحفظ، يرجى اختيار ملف PDF لا يتجاوز حجمه 600 كيلوبايت.');
                                 return;
                               }
                               setUploadError('');
